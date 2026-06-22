@@ -281,6 +281,159 @@ const MVP_LESSONS: Lesson[] = [
         explanation: 'El color de la orina es una guía directa y sencilla. Si es oscura, necesitas tomar agua de inmediato.',
       },
     ],
+  },
+  {
+    id: 'nutrition_portions',
+    title: 'Control de Porciones y Salidas',
+    description: 'Aprende a medir tus porciones con tu mano y a elegir en restaurantes.',
+    category: 'nutrition',
+    xpReward: 25,
+    slides: [
+      {
+        title: 'Porciones con Lucas Chef 👨‍🍳',
+        content: '¡No necesitas pesar tu comida en todos lados! Tu mano es una herramienta excelente y portátil para medir porciones estés donde estés. Vamos a ver cómo usarla.',
+        illustrationRole: 'chef',
+        illustrationExpression: 'happy',
+      },
+      {
+        title: 'La Regla de la Mano 🖐️',
+        content: '1. Proteína: Del tamaño de tu palma. 2. Carbohidratos: Una porción cabe en el cuenco de tu mano. 3. Verduras: Del tamaño de tu puño cerrado. 4. Grasas: Del tamaño de tu pulgar. ¡Fácil y práctico!',
+        illustrationRole: 'chef',
+        illustrationExpression: 'excited',
+      },
+      {
+        title: 'Comiendo fuera de casa 🍽️',
+        content: 'Cuando salgas a restaurantes, recuerda: pide siempre los aderezos o salsas por separado para controlar la grasa añadida, y bebe un vaso de agua antes de comer para mejorar la saciedad.',
+        illustrationRole: 'chef',
+        illustrationExpression: 'default',
+      },
+    ],
+    quiz: [
+      {
+        id: 'q_n3_1',
+        question: 'Según la regla de la mano, ¿cómo se mide la porción sugerida de proteínas?',
+        options: [
+          'Del tamaño de tu puño cerrado.',
+          'Del tamaño y grosor de la palma de tu mano.',
+          'Del tamaño de tu dedo pulgar.',
+        ],
+        correctAnswer: 1,
+        explanation: 'La palma de tu mano (sin contar los dedos) equivale aproximadamente a una porción de 85-110g de proteína magra.',
+      },
+      {
+        id: 'q_n3_2',
+        question: '¿Cuál es una estrategia inteligente para comer saludable en un restaurante?',
+        options: [
+          'Pedir las salsas y aderezos por separado para dosificarlos tú mismo.',
+          'Comer muy rápido para llenarte antes.',
+          'Evitar beber agua durante la comida.',
+        ],
+        correctAnswer: 0,
+        explanation: 'Los aderezos suelen tener calorías ocultas. Pedirlos por separado te permite disfrutar de la comida controlando la cantidad de grasa.',
+      },
+    ],
+  },
+  {
+    id: 'training_biomechanics',
+    title: 'Biomecánica: Evita Lesiones',
+    description: 'Aprende a realizar sentadillas y flexiones de forma segura.',
+    category: 'training',
+    xpReward: 30,
+    slides: [
+      {
+        title: 'Entrena seguro con Lucas Coach 🏋️‍♂️',
+        content: '¡La técnica lo es todo! Hacer ejercicio con mala postura no solo reduce tus resultados, sino que te expone a lesiones. Hoy veremos dos movimientos muy comunes.',
+        illustrationRole: 'coach',
+        illustrationExpression: 'thinking',
+      },
+      {
+        title: 'La Sentadilla Perfecta 🦵',
+        content: 'Al hacer sentadillas, mantén la espalda recta y el pecho erguido. Inicia el movimiento empujando la cadera hacia atrás (como sentándote en una silla) y evita que tus rodillas colapsen hacia adentro.',
+        illustrationRole: 'coach',
+        illustrationExpression: 'default',
+      },
+      {
+        title: 'Flexiones (Push-ups) sin dolor 🦾',
+        content: 'En las flexiones, no abras los codos a 90 grados hacia los lados (forma de T), ya que daña tus hombros. Mantén tus codos a unos 45 grados de tu torso (forma de flecha) para empujar con fuerza y seguridad.',
+        illustrationRole: 'coach',
+        illustrationExpression: 'excited',
+      },
+    ],
+    quiz: [
+      {
+        id: 'q_t2_1',
+        question: '¿Qué error común debemos evitar en las rodillas al hacer sentadillas?',
+        options: [
+          'Que las rodillas bajen más de 90 grados.',
+          'Que las rodillas colapsen hacia adentro (valgo de rodilla).',
+          'Mantener las rodillas alineadas con la punta de los pies.',
+        ],
+        correctAnswer: 1,
+        explanation: 'El colapso de rodillas hacia adentro pone mucha tensión en tus ligamentos. Empújalas hacia afuera alineándolas con tus pies.',
+      },
+      {
+        id: 'q_t2_2',
+        question: '¿Cuál es el mejor ángulo recomendado para los codos al hacer flexiones de pecho?',
+        options: [
+          'Totalmente abiertos a 90 grados (forma de T).',
+          'A unos 45 grados respecto al torso (forma de flecha).',
+          'Pegados al 100% tocando las costillas.',
+        ],
+        correctAnswer: 1,
+        explanation: 'La posición a 45 grados es la más anatómica y segura para el hombro, reclutando eficientemente el pectoral y tríceps.',
+      },
+    ],
+  },
+  {
+    id: 'habits_emotional',
+    title: 'Ansiedad y Hambre Emocional',
+    description: 'Aprende a diferenciar el hambre real de los antojos por estrés.',
+    category: 'habits',
+    xpReward: 30,
+    slides: [
+      {
+        title: 'Manejo del apetito con Lucas Zen 🧘‍♂️',
+        content: '¿Comes cuando estás aburrido, estresado o triste? Eso es hambre emocional. Hoy aprenderemos a diferenciarla del hambre física real para tomar el control de tus hábitos.',
+        illustrationRole: 'zen',
+        illustrationExpression: 'thinking',
+      },
+      {
+        title: 'Física vs. Emocional ⚖️',
+        content: 'El hambre física aparece gradualmente, se siente en el estómago y se satisface con cualquier comida saludable. El hambre emocional aparece de golpe, exige un antojo específico (azúcar, harinas) y suele generar culpa después.',
+        illustrationRole: 'zen',
+        illustrationExpression: 'default',
+      },
+      {
+        title: 'La Regla de los 5 Minutos ⏱️',
+        content: 'Cuando sientas un antojo repentino, detente y toma un vaso con agua. Espera 5 minutos haciendo otra actividad (caminar, respirar). Si el antojo desaparece, era sed o aburrimiento. ¡Sé consciente!',
+        illustrationRole: 'zen',
+        illustrationExpression: 'excited',
+      },
+    ],
+    quiz: [
+      {
+        id: 'q_h2_1',
+        question: '¿Qué característica define al hambre emocional?',
+        options: [
+          'Aparece de forma lenta y gradual.',
+          'Aparece de golpe y exige un antojo ultra-específico (ej: chocolate, papas fritas).',
+          'Se satisface comiendo un plato de brócoli o manzana.',
+        ],
+        correctAnswer: 1,
+        explanation: 'El hambre emocional no busca nutrición, busca confort. Por eso exige comida altamente palatable (azúcar/grasa) de forma inmediata.',
+      },
+      {
+        id: 'q_h2_2',
+        question: '¿En qué consiste la regla de los 5 minutos ante un antojo?',
+        options: [
+          'Comer el antojo en menos de 5 minutos.',
+          'Tomar agua, esperar 5 minutos haciendo otra actividad y reevaluar si es hambre real.',
+          'Esperar 5 minutos antes de volver a comer tu plato de almuerzo.',
+        ],
+        correctAnswer: 1,
+        explanation: 'Esta pausa interrumpe la respuesta automática de comer por impulso, dándole tiempo al cerebro para calmar la ansiedad.',
+      },
+    ],
   }
 ];
 
