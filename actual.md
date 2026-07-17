@@ -32,17 +32,20 @@ LUCAS es una aplicación PWA (Progressive Web App) estilo **Duolingo** diseñada
 *   **Instalación PWA Directa y Optimizada**:
     *   Actualizamos la PWA en `vite.config.ts` con el nombre oficial de la app como **LUCAS** y convertimos la cabeza del personaje en un PNG real para el icono oficial de escritorio e instalador de Chrome/Edge.
     *   Hicimos que el botón **"Instalar App"** abra directamente el diálogo nativo de descarga en PC y Android. Si se navega desde un iPhone (iOS), abrirá una guía interactiva adaptada.
+*   **Conexión y Despliegue de la Edge Function en Producción**:
+    *   Desplegamos con éxito la función `vertex-ai` en el proyecto de Supabase en producción.
+    *   Configuramos de forma encriptada las credenciales de Google Cloud (`GCP_PROJECT_ID`, `GCP_CLIENT_EMAIL`, `GCP_PRIVATE_KEY`).
+    *   Diagnosticamos y resolvimos la cuota regional de Vertex AI apuntando a la región activa del cliente (**`asia-northeast1`**).
+    *   Implementamos el formateador y extractor de JSON `extractValidJson` para neutralizar de forma robusta cualquier carácter extra devuelto por la IA.
+    *   Sincronizamos la base de datos de producción con el script de 150 niveles (`seed_curriculum.sql`) y la caché de lecciones, eliminando todos los errores 406 de consola tras limpiar el caché del navegador.
 
 ---
 
 ## 🚀 Lo que se quiere hacer (Próximos Pasos e Ideas)
 
-1.  **Desplegar Edge Function (Opcional - Para habilitar la IA Gemini)**:
-    *   Si se desea que la IA redacte explicaciones científicas reales de cada uno de los 150 temas en tiempo real en la voz de Lucas, debemos instalar Supabase CLI en la PC y desplegar la carpeta `supabase/functions/vertex-ai`.
-    *   Conectar las credenciales de Google Cloud (`GCP_PROJECT_ID`, `GCP_CLIENT_EMAIL`, `GCP_PRIVATE_KEY`) en el panel de secretos de tu proyecto de Supabase.
-2.  **Agregar Sonidos y Efectos de Audio**:
+1.  **Agregar Sonidos y Efectos de Audio**:
     *   Añadir chimes de acierto (sonido de éxito alegre) y error (sonido de zumbido o "plop") durante el quiz para dar una experiencia de juego todavía más inmersiva.
-3.  **Auditoría y Pruebas en Dispositivos Reales**:
+2.  **Auditoría y Pruebas en Dispositivos Reales**:
     *   Instalar la aplicación PWA en teléfonos Android e iOS para validar que el icono aparezca correctamente en la pantalla de inicio y que se oculte la barra de direcciones del navegador (modo standalone).
-4.  **Flujo del Plan Elite**:
+3.  **Flujo del Plan Elite**:
     *   Hacer pruebas reales en la vista de ventas ("EliteView") para confirmar la redirección de los botones hacia tu página de conversión: https://bienestarsinexcusas.com/plan-elite.
