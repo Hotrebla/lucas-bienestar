@@ -376,40 +376,99 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const seqNum = parseInt(lessonId.split('_level_')[1]) || 1;
       const difficulty = seqNum <= 10 ? 'basic' : seqNum <= 30 ? 'intermediate' : 'advanced';
 
-      const functionResponse = await supabase.functions.invoke('vertex-ai', {
-        body: {
-          lessonId,
-          topic,
-          category,
-          difficulty,
-        },
-      });
+      try {
+        const functionResponse = await supabase.functions.invoke('vertex-ai', {
+          body: {
+            lessonId,
+            topic,
+            category,
+            difficulty,
+          },
+        });
 
-      const generated = functionResponse.data;
-      if (generated && generated.slides && generated.quiz) {
-        const fullLesson: Lesson = {
-          ...lessonShell,
-          slides: generated.slides,
-          quiz: generated.quiz,
-        };
-
-        // Cache in Supabase if configured (and not mock)
-        if (isSupabaseConfigured() && !functionResponse.error && generated.status !== "mock") {
-          await supabase.from('generated_lessons').insert({
-            lesson_id: lessonId,
+        const generated = functionResponse.data;
+        if (generated && generated.slides && generated.quiz) {
+          const fullLesson: Lesson = {
+            ...lessonShell,
             slides: generated.slides,
             quiz: generated.quiz,
-          });
+          };
+
+          // Cache in Supabase if configured (and not mock)
+          if (isSupabaseConfigured() && !functionResponse.error && generated.status !== "mock") {
+            await supabase.from('generated_lessons').insert({
+              lesson_id: lessonId,
+              slides: generated.slides,
+              quiz: generated.quiz,
+            });
+          }
+
+          // Cache in memory and set active
+          setLessons((prev) => prev.map((l) => (l.id === lessonId ? fullLesson : l)));
+          setCurrentLesson(fullLesson);
+        } else {
+          throw new Error(functionResponse.error?.message || "No se recibió el JSON de lección esperado.");
         }
+      } catch (funcErr) {
+        console.warn("Fallo la Edge Function de Supabase. Iniciando fallback local:", funcErr);
+        
+        // Dynamic Local Generator Fallback
+        const roleName = (category === "training" ? "coach" : category === "habits" ? "zen" : "chef") as 'chef' | 'coach' | 'zen' | 'motivator';
+        const roleTitle = category === "training" ? "Lucas Coach 🏋️‍♂️" : category === "habits" ? "Lucas Zen 🧘‍♂️" : "Lucas Chef 👨‍🍳";
+        
+        const localMock = {
+          slides: [
+            {
+              title: `¡Bienvenido al Nivel: ${lessonShell.title}!`,
+              content: `Hoy aprenderemos sobre ${lessonShell.title}. Esta lección está configurada en la dificultad: ${difficulty}. ¡Pon mucha atención!`,
+              illustrationRole: roleName,
+              illustrationExpression: "happy" as const
+            },
+            {
+              title: "Consejo de Lucas 💡",
+              content: `Para aplicar este concepto en tu día a día, haz cambios paso a paso. Recuerda que no necesitas perfección, solo constancia.`,
+              illustrationRole: roleName,
+              illustrationExpression: "default" as const
+            }
+          ],
+          quiz: [
+            {
+              id: `q_${lessonId}_1`,
+              question: `¿Cuál es el beneficio principal de estudiar ${lessonShell.title}?`,
+              options: [
+                "Tomar decisiones informadas y consistentes sobre mi bienestar.",
+                "Ninguno, solo sirve para pasar el rato en el juego.",
+                "Solo es para acumular puntos XP."
+              ],
+              correctAnswer: 0,
+              explanation: "¡Excelente! Aprender la teoría nos ayuda a tomar mejores decisiones en nuestro día a día."
+            },
+            {
+              id: `q_${lessonId}_2`,
+              question: `¿Qué consejo nos da ${roleTitle} en esta lección?`,
+              options: [
+                "Buscar la perfección total en la alimentación y entrenamiento.",
+                "Enfocarnos en hacer cambios constantes y paso a paso.",
+                "Saltarnos el calentamiento antes del ejercicio."
+              ],
+              correctAnswer: 1,
+              explanation: "¡Exacto! La constancia supera a la perfección en cualquier proceso de bienestar."
+            }
+          ]
+        };
+
+        const fullLesson: Lesson = {
+          ...lessonShell,
+          slides: localMock.slides,
+          quiz: localMock.quiz,
+        };
 
         // Cache in memory and set active
         setLessons((prev) => prev.map((l) => (l.id === lessonId ? fullLesson : l)));
         setCurrentLesson(fullLesson);
-      } else {
-        throw new Error(functionResponse.error?.message || "No se recibió el JSON de lección esperado.");
       }
     } catch (e: any) {
-      console.error('Error al iniciar/generar lección:', e);
+      console.error('Error general al iniciar lección:', e);
       alert(`No se pudo iniciar la lección. Detalles: ${e.message || e}`);
     } finally {
       setLoadingLesson(false);
