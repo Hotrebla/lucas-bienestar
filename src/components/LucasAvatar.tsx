@@ -108,17 +108,7 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
         style={{ filter: imageFilter }}
       />
 
-      {/* Role specific hat or badge overlay */}
-      {role === 'chef' && (
-        <div className="role-chef-hat-overlay">
-          👨‍🍳
-        </div>
-      )}
-      {role === 'coach' && (
-        <div className="role-coach-whistle-overlay">
-          🏋️‍♂️
-        </div>
-      )}
+      {/* Role specific zen halo overlay */}
       {role === 'zen' && (
         <div className="role-zen-halo-overlay" />
       )}
