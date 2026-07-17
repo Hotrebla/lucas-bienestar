@@ -91,7 +91,7 @@ serve(async (req) => {
     const gcpClientEmail = Deno.env.get("GCP_CLIENT_EMAIL");
     const gcpPrivateKey = Deno.env.get("GCP_PRIVATE_KEY");
     const gcpRegion = Deno.env.get("GCP_REGION") || "us-central1";
-    const gcpModel = Deno.env.get("GCP_MODEL_NAME") || "gemini-3.5-flash"; // Default to July 2026 model
+    const gcpModel = Deno.env.get("GCP_MODEL_NAME") || "gemini-3.5-flash"; // Default to July 2026 flagship model
 
     // Lucas Avatar Role name
     const roleName = category === "training" ? "coach" : category === "habits" ? "zen" : "chef";
