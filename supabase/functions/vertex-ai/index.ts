@@ -1,5 +1,5 @@
 // SUPABASE EDGE FUNCTION: vertex-ai
-// Servidor de Deno seguro para consultar a Vertex AI (Google Cloud) usando Gemini 3.5 Flash de forma privada.
+// Servidor de Deno seguro para consultar a Vertex AI (Google Cloud) o Google AI Studio (Gemini) usando Gemini 3.5 Flash de forma privada.
 // Desplegar ejecutando: supabase functions deploy vertex-ai
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
@@ -12,16 +12,13 @@ const corsHeaders = {
 
 // Helper para obtener el Access Token de Google Cloud mediante Service Account
 async function getAccessToken(clientEmail: string, privateKey: string): Promise<string> {
-  // Limpiar y formatear la clave privada PEM
+  // Limpiar y formatear la clave privada PEM de forma robusta con Regex
   const cleanKey = privateKey.replace(/\\n/g, '\n');
-  const pemHeader = "-----BEGIN PRIVATE KEY-----";
-  const pemFooter = "-----END PRIVATE KEY-----";
-  
-  let pemContents = cleanKey;
-  if (cleanKey.includes(pemHeader)) {
-    pemContents = cleanKey.substring(pemHeader.length, cleanKey.length - pemFooter.length);
+  const match = cleanKey.match(/-----BEGIN PRIVATE KEY-----([\s\S]*?)-----END PRIVATE KEY-----/);
+  if (!match) {
+    throw new Error("Formato de clave privada inválido: No se encontró la cabecera/pie PEM.");
   }
-  pemContents = pemContents.replace(/\s/g, '');
+  const pemContents = match[1].replace(/\s/g, '');
   
   // Convertir clave base64 a ArrayBuffer (formato PKCS8)
   const binaryDerString = atob(pemContents);
@@ -86,23 +83,27 @@ serve(async (req) => {
       throw new Error("topic y category son requeridos.");
     }
 
-    // 1. Obtener credenciales de Google Cloud desde los secretos de Supabase
+    // 1. Obtener claves y secretos configurados en Supabase
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY"); // Google AI Studio (Bypass directo)
     const gcpProjectId = Deno.env.get("GCP_PROJECT_ID");
     const gcpClientEmail = Deno.env.get("GCP_CLIENT_EMAIL");
     const gcpPrivateKey = Deno.env.get("GCP_PRIVATE_KEY");
     const gcpRegion = Deno.env.get("GCP_REGION") || "us-central1";
-    const gcpModel = Deno.env.get("GCP_MODEL_NAME") || "gemini-3.5-flash"; // Default to July 2026 flagship model
+    const gcpModel = Deno.env.get("GCP_MODEL_NAME") || "gemini-3.5-flash"; // Por defecto usa la versión insignia del 2026
 
     // Lucas Avatar Role name
     const roleName = category === "training" ? "coach" : category === "habits" ? "zen" : "chef";
     const roleTitle = category === "training" ? "Lucas Coach 🏋️‍♂️" : category === "habits" ? "Lucas Zen 🧘‍♂️" : "Lucas Chef 👨‍🍳";
 
-    // Si no están las credenciales configuradas, devolvemos mock data dinámico de prueba
-    if (!gcpProjectId || !gcpPrivateKey || !gcpClientEmail) {
-      console.warn("Vertex AI no configurado. Utilizando Mock Data.");
+    // Si no hay ninguna credencial configurada, devolvemos mock data de prueba
+    const hasGoogleAI = !!geminiApiKey;
+    const hasVertexAI = !!(gcpProjectId && gcpPrivateKey && gcpClientEmail);
+
+    if (!hasGoogleAI && !hasVertexAI) {
+      console.warn("Ninguna credencial de IA configurada. Utilizando Mock Data.");
       
-      // Crear contenido de lección estático simulado de prueba
       const mockResult = {
+        status: "mock",
         slides: [
           {
             title: `¡Bienvenido al tema: ${topic}!`,
@@ -149,10 +150,7 @@ serve(async (req) => {
       );
     }
 
-    // 2. Autenticación con Google Cloud OAuth2
-    const token = await getAccessToken(gcpClientEmail, gcpPrivateKey);
-
-    // 3. Prompt estructurado para Gemini 3.5 Flash
+    // 2. Prompt estructurado para Gemini
     const systemPrompt = `Eres Lucas, un experto en bienestar, salud y fitness de la academia "Bienestar Sin Excusas" (BSE).
 Tus características según tu rol actual:
 - Tu rol en esta lección: ${roleTitle} (${roleName}).
@@ -186,46 +184,87 @@ Esquema JSON esperado:
 
 Genera exactamente entre 2 y 3 diapositivas (slides) y 2 preguntas de quiz.`;
 
-    // 4. Llamada a Vertex AI API (Gemini 3.5 Flash)
-    const vertexUrl = `https://${gcpRegion}-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/${gcpRegion}/publishers/google/models/${gcpModel}:generateContent`;
+    let resultJson: any = null;
 
-    const vertexResponse = await fetch(vertexUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: `${systemPrompt}\n\n${userPrompt}` }
-            ]
+    if (hasGoogleAI) {
+      console.log("Generando con Google AI Studio (GEMINI_API_KEY)...");
+      const googleAiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gcpModel}:generateContent?key=${geminiApiKey}`;
+
+      const aiResponse = await fetch(googleAiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: `${systemPrompt}\n\n${userPrompt}` }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.3,
           }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.3,
-        }
-      })
-    });
+        })
+      });
 
-    if (!vertexResponse.ok) {
-      const errText = await vertexResponse.text();
-      throw new Error(`Vertex AI API request failed: ${errText}`);
+      if (!aiResponse.ok) {
+        const errText = await aiResponse.text();
+        throw new Error(`Google AI Studio API request failed: ${errText}`);
+      }
+
+      const responseData = await aiResponse.json();
+      const aiText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!aiText) {
+        throw new Error("No se recibió respuesta de texto desde Google AI Studio.");
+      }
+      resultJson = JSON.parse(aiText.trim());
+      
+    } else {
+      console.log("Generando con Vertex AI (Service Account)...");
+      // 2. Autenticación con Google Cloud OAuth2
+      const token = await getAccessToken(gcpClientEmail!, gcpPrivateKey!);
+
+      // 3. Llamada a Vertex AI API (Gemini 3.5 Flash)
+      const vertexUrl = `https://${gcpRegion}-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/${gcpRegion}/publishers/google/models/${gcpModel}:generateContent`;
+
+      const vertexResponse = await fetch(vertexUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: `${systemPrompt}\n\n${userPrompt}` }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            temperature: 0.3,
+          }
+        })
+      });
+
+      if (!vertexResponse.ok) {
+        const errText = await vertexResponse.text();
+        throw new Error(`Vertex AI API request failed: ${errText}`);
+      }
+
+      const responseData = await vertexResponse.json();
+      const aiText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!aiText) {
+        throw new Error("No se recibió respuesta de texto desde Vertex AI.");
+      }
+      resultJson = JSON.parse(aiText.trim());
     }
-
-    const responseData = await vertexResponse.json();
-    
-    // Obtener el texto del JSON retornado por la IA
-    const aiText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!aiText) {
-      throw new Error("No se recibió respuesta de texto desde Vertex AI.");
-    }
-
-    // Parsear el JSON generado por Gemini
-    const resultJson = JSON.parse(aiText.trim());
 
     return new Response(
       JSON.stringify(resultJson),
