@@ -70,6 +70,42 @@ async function getAccessToken(clientEmail: string, privateKey: string): Promise<
   return tokenData.access_token;
 }
 
+function extractValidJson(text: string): string {
+  const start = text.indexOf('{');
+  if (start === -1) return text;
+  
+  let braceCount = 0;
+  let inString = false;
+  let escape = false;
+  
+  for (let i = start; i < text.length; i++) {
+    const char = text[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (char === '\\') {
+      escape = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (!inString) {
+      if (char === '{') {
+        braceCount++;
+      } else if (char === '}') {
+        braceCount--;
+        if (braceCount === 0) {
+          return text.substring(start, i + 1);
+        }
+      }
+    }
+  }
+  return text;
+}
+
 serve(async (req) => {
   // Manejo de peticiones CORS preflight
   if (req.method === 'OPTIONS') {
@@ -88,7 +124,7 @@ serve(async (req) => {
     const gcpProjectId = Deno.env.get("GCP_PROJECT_ID");
     const gcpClientEmail = Deno.env.get("GCP_CLIENT_EMAIL");
     const gcpPrivateKey = Deno.env.get("GCP_PRIVATE_KEY");
-    const gcpRegion = Deno.env.get("GCP_REGION") || "us-central1";
+    const gcpRegion = Deno.env.get("GCP_REGION") || "asia-northeast1";
     const gcpModel = Deno.env.get("GCP_MODEL_NAME") || "gemini-3.5-flash"; // Por defecto usa la versión insignia del 2026
 
     // Lucas Avatar Role name
@@ -221,7 +257,13 @@ Genera exactamente entre 2 y 3 diapositivas (slides) y 2 preguntas de quiz.`;
       if (!aiText) {
         throw new Error("No se recibió respuesta de texto desde Google AI Studio.");
       }
-      resultJson = JSON.parse(aiText.trim());
+      let cleanedText = aiText.trim();
+      cleanedText = extractValidJson(cleanedText);
+      try {
+        resultJson = JSON.parse(cleanedText);
+      } catch (parseErr: any) {
+        throw new Error(`Error parseando JSON generado por la IA: ${parseErr.message}. Texto recibido: ${aiText}`);
+      }
       
     } else {
       console.log("Generando con Vertex AI (Service Account)...");
@@ -263,7 +305,13 @@ Genera exactamente entre 2 y 3 diapositivas (slides) y 2 preguntas de quiz.`;
       if (!aiText) {
         throw new Error("No se recibió respuesta de texto desde Vertex AI.");
       }
-      resultJson = JSON.parse(aiText.trim());
+      let cleanedText = aiText.trim();
+      cleanedText = extractValidJson(cleanedText);
+      try {
+        resultJson = JSON.parse(cleanedText);
+      } catch (parseErr: any) {
+        throw new Error(`Error parseando JSON generado por la IA: ${parseErr.message}. Texto recibido: ${aiText}`);
+      }
     }
 
     return new Response(
