@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { LucasAvatar } from '../components/LucasAvatar';
+import { InstallPwaButton } from '../components/InstallPwaButton';
 import { Sparkles } from 'lucide-react';
 
 export const WelcomeView: React.FC = () => {
@@ -34,6 +35,8 @@ export const WelcomeView: React.FC = () => {
           Nutrición, entrenamiento y hábitos saludables de forma divertida y adictiva.
         </p>
       </div>
+
+      <InstallPwaButton />
 
       <form onSubmit={handleSubmit} className="form-card card">
         <h2 className="form-title">Crea tu Perfil</h2>

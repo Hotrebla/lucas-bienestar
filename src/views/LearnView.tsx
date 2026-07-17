@@ -3,6 +3,7 @@ import { useGame } from '../context/GameContext';
 import type { Category } from '../context/GameContext';
 import { LucasAvatar } from '../components/LucasAvatar';
 import type { LucasRole } from '../components/LucasAvatar';
+import { InstallPwaButton } from '../components/InstallPwaButton';
 import { ChefHat, Dumbbell, Sparkles, Check, Lock, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -100,6 +101,8 @@ export const LearnView: React.FC = () => {
           <span>Hábitos</span>
         </button>
       </div>
+
+      <InstallPwaButton />
 
       {/* Path header */}
       <div className="path-header" style={{ borderColor: theme.themeColor }}>

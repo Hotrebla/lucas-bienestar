@@ -1,12 +1,76 @@
 // SUPABASE EDGE FUNCTION: vertex-ai
-// Servidor de Deno seguro para consultar a Vertex AI (Google Cloud) sin exponer llaves en el cliente.
+// Servidor de Deno seguro para consultar a Vertex AI (Google Cloud) usando Gemini 3.5 Flash de forma privada.
 // Desplegar ejecutando: supabase functions deploy vertex-ai
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { create, Header, Payload } from "https://deno.land/x/djwt@v2.8/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Helper para obtener el Access Token de Google Cloud mediante Service Account
+async function getAccessToken(clientEmail: string, privateKey: string): Promise<string> {
+  // Limpiar y formatear la clave privada PEM
+  const cleanKey = privateKey.replace(/\\n/g, '\n');
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  
+  let pemContents = cleanKey;
+  if (cleanKey.includes(pemHeader)) {
+    pemContents = cleanKey.substring(pemHeader.length, cleanKey.length - pemFooter.length);
+  }
+  pemContents = pemContents.replace(/\s/g, '');
+  
+  // Convertir clave base64 a ArrayBuffer (formato PKCS8)
+  const binaryDerString = atob(pemContents);
+  const binaryDer = new Uint8Array(binaryDerString.length);
+  for (let i = 0; i < binaryDerString.length; i++) {
+    binaryDer[i] = binaryDerString.charCodeAt(i);
+  }
+  
+  // Importar clave con Web Crypto API
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer,
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: "SHA-256",
+    },
+    false,
+    ["sign"]
+  );
+
+  const jwtHeader: Header = { alg: "RS256", typ: "JWT" };
+  const now = Math.floor(Date.now() / 1000);
+  const jwtPayload: Payload = {
+    iss: clientEmail,
+    scope: "https://www.googleapis.com/auth/cloud-platform",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600,
+    iat: now,
+  };
+
+  // Firmar la aserción JWT
+  const assertion = await create(jwtHeader, jwtPayload, cryptoKey);
+
+  // Solicitar Access Token a Google OAuth2
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${assertion}`,
+  });
+
+  if (!tokenResponse.ok) {
+    const errText = await tokenResponse.text();
+    throw new Error(`Google OAuth2 Token request failed: ${errText}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
 }
 
 serve(async (req) => {
@@ -16,80 +80,160 @@ serve(async (req) => {
   }
 
   try {
-    const { topic, category, action } = await req.json()
+    const { lessonId, topic, category, difficulty } = await req.json()
+
+    if (!topic || !category) {
+      throw new Error("topic y category son requeridos.");
+    }
 
     // 1. Obtener credenciales de Google Cloud desde los secretos de Supabase
-    // Estas llaves deben ser agregadas con:
-    // supabase secrets set GCP_PROJECT_ID="tu-proyecto-id" GCP_CLIENT_EMAIL="tu-service-account@..." GCP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----..."
     const gcpProjectId = Deno.env.get("GCP_PROJECT_ID");
     const gcpClientEmail = Deno.env.get("GCP_CLIENT_EMAIL");
     const gcpPrivateKey = Deno.env.get("GCP_PRIVATE_KEY");
+    const gcpRegion = Deno.env.get("GCP_REGION") || "us-central1";
+    const gcpModel = Deno.env.get("GCP_MODEL_NAME") || "gemini-3.5-flash"; // Default to July 2026 model
 
-    // Si no están las credenciales configuradas, devolvemos un indicador para usar mock data
+    // Lucas Avatar Role name
+    const roleName = category === "training" ? "coach" : category === "habits" ? "zen" : "chef";
+    const roleTitle = category === "training" ? "Lucas Coach 🏋️‍♂️" : category === "habits" ? "Lucas Zen 🧘‍♂️" : "Lucas Chef 👨‍🍳";
+
+    // Si no están las credenciales configuradas, devolvemos mock data dinámico de prueba
     if (!gcpProjectId || !gcpPrivateKey || !gcpClientEmail) {
-      return new Response(
-        JSON.stringify({
-          status: "mock",
-          message: "Credenciales de Vertex AI no configuradas. Servidor operando en modo simulación (Mock).",
-          generatedQuiz: {
-            id: `vertex_mock_${Date.now()}`,
-            title: `Quiz sobre ${topic || 'Bienestar'}`,
-            description: `Preguntas dinámicas sobre ${topic || 'Salud'}`,
-            category: category || 'nutrition',
-            xpReward: 15,
-            slides: [
-              {
-                title: "¡Dato Dinámico de Lucas! 💡",
-                content: `¿Sabías que aprender sobre ${topic || 'Bienestar'} acelera tus resultados de fitness y salud?`,
-                illustrationRole: category === "training" ? "coach" : category === "habits" ? "zen" : "chef",
-                illustrationExpression: "happy"
-              }
-            ],
-            quiz: [
-              {
-                id: "q_v1",
-                question: `¿Cuál es el beneficio principal de profundizar en ${topic || 'este tema'}?`,
-                options: [
-                  "No influye mucho en la salud real diaria.",
-                  "Tomar decisiones más conscientes y basadas en evidencia para tus hábitos.",
-                  "Ganar XP en la app de Lucas únicamente."
-                ],
-                correctAnswer: 1,
-                explanation: "¡Correcto! El conocimiento práctico es el primer paso para cambiar hábitos."
-              }
-            ]
+      console.warn("Vertex AI no configurado. Utilizando Mock Data.");
+      
+      // Crear contenido de lección estático simulado de prueba
+      const mockResult = {
+        slides: [
+          {
+            title: `¡Bienvenido al tema: ${topic}!`,
+            content: `Hoy vamos a aprender sobre ${topic}. Este contenido está en nivel ${difficulty || 'básico'}. Mantente atento a los consejos de ${roleTitle}.`,
+            illustrationRole: roleName,
+            illustrationExpression: "happy"
+          },
+          {
+            title: "Consejo Práctico 💡",
+            content: `Recuerda aplicar esto de forma diaria para construir consistencia. Los pequeños cambios del 1% hacen grandes transformaciones a largo plazo.`,
+            illustrationRole: roleName,
+            illustrationExpression: "default"
           }
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
+        ],
+        quiz: [
+          {
+            id: `q_${lessonId}_1`,
+            question: `¿Cuál es el beneficio principal de estudiar ${topic}?`,
+            options: [
+              "Tomar decisiones informadas y consistentes sobre mis hábitos de bienestar.",
+              "Solo sirve para ganar puntos de experiencia en el juego.",
+              "No tiene ningún impacto práctico en el día a día."
+            ],
+            correctAnswer: 0,
+            explanation: "¡Correcto! Comprender la teoría nos ayuda a tomar mejores decisiones prácticas en nuestra salud."
+          },
+          {
+            id: `q_${lessonId}_2`,
+            question: `¿Qué nivel de dificultad tiene esta lección?`,
+            options: [
+              "Avanzado",
+              "Básico / Intermedio",
+              `Nivel: ${difficulty || 'básico'}`
+            ],
+            correctAnswer: 2,
+            explanation: `Exacto. Esta lección ha sido configurada en la dificultad: ${difficulty || 'básico'}.`
+          }
+        ]
+      };
+
+      return new Response(
+        JSON.stringify(mockResult),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 2. En producción: Autenticación con Google Cloud OAuth2
-    // A continuación, se muestra el flujo conceptual para generar el JWT de aserción y solicitar un access token:
-    // A) Crear la cabecera y el payload para el JWT de aserción
-    // B) Firmar el JWT usando la clave privada (GCP_PRIVATE_KEY) y algoritmo RS256
-    // C) Hacer un POST a https://oauth2.googleapis.com/token para recibir el token
-    // D) Consultar Vertex AI en:
-    //    https://us-central1-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent
+    // 2. Autenticación con Google Cloud OAuth2
+    const token = await getAccessToken(gcpClientEmail, gcpPrivateKey);
+
+    // 3. Prompt estructurado para Gemini 3.5 Flash
+    const systemPrompt = `Eres Lucas, un experto en bienestar, salud y fitness de la academia "Bienestar Sin Excusas" (BSE).
+Tus características según tu rol actual:
+- Tu rol en esta lección: ${roleTitle} (${roleName}).
+- Debes redactar la teoría de forma súper amigable, directa, empática y motivadora, al estilo de un tutor de Duolingo (explicaciones sencillas de entender pero con base científica).
+- Dificultad de la lección: ${difficulty || 'basic'}. Adapta el tecnicismo a esta dificultad.
+- Al final debes proveer un quiz de evaluación interactivo.
+
+Debes responder ÚNICAMENTE con un objeto JSON válido (sin formato markdown \`\`\`json ni texto adicional) que contenga la estructura exacta de lección descrita en el esquema de abajo.`;
+
+    const userPrompt = `Genera el contenido de aprendizaje para la lección sobre el tema: "${topic}".
+Esquema JSON esperado:
+{
+  "slides": [
+    {
+      "title": "Título corto y llamativo",
+      "content": "Contenido teórico de 2 a 3 líneas máx (conciso y directo). Usa emojis de vez en cuando.",
+      "illustrationRole": "${roleName}",
+      "illustrationExpression": "default" (o 'happy', 'sad', 'thinking', 'excited')
+    }
+  ],
+  "quiz": [
+    {
+      "id": "q1",
+      "question": "Pregunta de opción múltiple directa",
+      "options": ["Opción A", "Opción B", "Opción C"],
+      "correctAnswer": 0 (índice de la respuesta correcta),
+      "explanation": "Explicación breve de por qué esta es la respuesta correcta en la voz de Lucas."
+    }
+  ]
+}
+
+Genera exactamente entre 2 y 3 diapositivas (slides) y 2 preguntas de quiz.`;
+
+    // 4. Llamada a Vertex AI API (Gemini 3.5 Flash)
+    const vertexUrl = `https://${gcpRegion}-aiplatform.googleapis.com/v1/projects/${gcpProjectId}/locations/${gcpRegion}/publishers/google/models/${gcpModel}:generateContent`;
+
+    const vertexResponse = await fetch(vertexUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: `${systemPrompt}\n\n${userPrompt}` }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.3,
+        }
+      })
+    });
+
+    if (!vertexResponse.ok) {
+      const errText = await vertexResponse.text();
+      throw new Error(`Vertex AI API request failed: ${errText}`);
+    }
+
+    const responseData = await vertexResponse.json();
     
-    // NOTA: Para no sobrecargar con librerías externas de criptografía en Deno, 
-    // puedes usar el SDK oficial o implementar la firma de tokens nativa.
-    
+    // Obtener el texto del JSON retornado por la IA
+    const aiText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!aiText) {
+      throw new Error("No se recibió respuesta de texto desde Vertex AI.");
+    }
+
+    // Parsear el JSON generado por Gemini
+    const resultJson = JSON.parse(aiText.trim());
+
     return new Response(
-      JSON.stringify({
-        status: "success",
-        message: "Endpoint de Vertex AI conectado correctamente. Listo para procesar e interceptar prompts."
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+      JSON.stringify(resultJson),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (error: any) {
+    console.error("Error in Edge Function:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }), 
       {
