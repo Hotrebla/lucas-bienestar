@@ -8,10 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'lucas-body.png', 'lucas-head.png'],
       manifest: {
-        name: 'Lucas - Bienestar Educativo & Gamificado',
-        short_name: 'Lucas',
+        name: 'LUCAS',
+        short_name: 'LUCAS',
         description: 'Aprende nutrición, entrenamiento y hábitos saludables con Lucas.',
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
@@ -20,19 +20,19 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'favicon.svg',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'favicon.svg',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'favicon.svg',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]
