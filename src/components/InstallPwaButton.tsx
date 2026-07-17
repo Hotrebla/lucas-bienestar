@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Smartphone, X, ExternalLink } from 'lucide-react';
+import { Download, Smartphone, X, ExternalLink, Laptop } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const InstallPwaButton: React.FC = () => {
-  const [isInstallable, setIsInstallable] = useState(!!(window as any).deferredPrompt);
-  const [showIosModal, setShowIosModal] = useState(false);
+  const [hasPrompt, setHasPrompt] = useState(!!(window as any).deferredPrompt);
+  const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pc' | 'android' | 'ios'>('pc');
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Check if already installed / standalone
+    // Check if already installed / running in standalone mode
     const checkStandalone = () => {
       const isStandaloneMode = 
         window.matchMedia('(display-mode: standalone)').matches || 
@@ -20,7 +21,7 @@ export const InstallPwaButton: React.FC = () => {
 
     // Listen to custom installable event
     const handleInstallable = () => {
-      setIsInstallable(true);
+      setHasPrompt(true);
     };
 
     window.addEventListener('pwa-installable', handleInstallable);
@@ -33,31 +34,39 @@ export const InstallPwaButton: React.FC = () => {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   };
 
-  const handleInstallClick = async () => {
+  const isAndroid = () => {
+    return /Android/.test(navigator.userAgent);
+  };
+
+  // Set default tab based on user device
+  useEffect(() => {
     if (isIos()) {
-      setShowIosModal(true);
-      return;
+      setActiveTab('ios');
+    } else if (isAndroid()) {
+      setActiveTab('android');
+    } else {
+      setActiveTab('pc');
     }
+  }, []);
 
+  const handleInstallClick = async () => {
     const promptEvent = (window as any).deferredPrompt;
-    if (!promptEvent) return;
-
-    // Trigger native prompt
-    promptEvent.prompt();
-
-    const { outcome } = await promptEvent.userChoice;
-    console.log(`User response to install prompt: ${outcome}`);
-
-    // Reset prompt event
-    (window as any).deferredPrompt = null;
-    setIsInstallable(false);
+    
+    // If the browser supports the automatic install prompt, trigger it
+    if (promptEvent) {
+      promptEvent.prompt();
+      const { outcome } = await promptEvent.userChoice;
+      console.log(`User response to install prompt: ${outcome}`);
+      (window as any).deferredPrompt = null;
+      setHasPrompt(false);
+    } else {
+      // Otherwise, show the manual installation guide modal
+      setShowModal(true);
+    }
   };
 
   // If already installed, don't show the button
   if (isStandalone) return null;
-
-  // Show if it is installable (Android/Desktop Chrome) OR if it is an iPhone (iOS is always installable manually)
-  if (!isInstallable && !isIos()) return null;
 
   return (
     <>
@@ -65,17 +74,17 @@ export const InstallPwaButton: React.FC = () => {
         className="install-pwa-banner card"
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
+        transition={{ delay: 0.5 }}
       >
         <div className="banner-content">
           <Smartphone className="banner-icon animate-pulse" />
           <div className="banner-text">
-            <h4>Instala la App de Lucas</h4>
-            <p>Juega más rápido, sin barras de navegación y con acceso offline.</p>
+            <h4>Descarga la App de Lucas</h4>
+            <p>Juega más rápido, en pantalla completa y con acceso offline.</p>
           </div>
         </div>
         <button className="btn btn-primary banner-btn" onClick={handleInstallClick}>
-          Instalar <Download size={16} />
+          {hasPrompt ? 'Instalar' : 'Cómo Instalar'} <Download size={16} />
         </button>
 
         <style>{`
@@ -87,9 +96,10 @@ export const InstallPwaButton: React.FC = () => {
             gap: 16px;
             padding: 14px 16px;
             border-color: var(--color-primary);
-            border-width: 2px;
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--color-primary-light) 100%);
+            border-width: 2.5px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(79, 70, 229, 0.05) 100%);
             margin-bottom: 16px;
+            border-radius: 16px;
           }
 
           .banner-content {
@@ -110,6 +120,7 @@ export const InstallPwaButton: React.FC = () => {
           .banner-text h4 {
             font-size: 0.9rem;
             color: var(--text-primary);
+            font-weight: 800;
           }
 
           .banner-text p {
@@ -124,6 +135,9 @@ export const InstallPwaButton: React.FC = () => {
             font-size: 0.85rem;
             border-radius: 12px;
             flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             box-shadow: 0 3px 0 #4f46e5;
           }
 
@@ -132,8 +146,8 @@ export const InstallPwaButton: React.FC = () => {
             box-shadow: 0 0px 0 #4f46e5;
           }
 
-          /* iOS Instructions Modal */
-          .ios-modal-overlay {
+          /* Universal Installation Modal */
+          .pwa-modal-overlay {
             position: fixed;
             top: 0;
             bottom: 0;
@@ -141,25 +155,26 @@ export const InstallPwaButton: React.FC = () => {
             transform: translateX(-50%);
             width: 100%;
             max-width: var(--mobile-width);
-            background-color: rgba(15, 23, 42, 0.75);
+            background-color: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(4px);
             z-index: 300;
             display: flex;
             align-items: flex-end;
           }
 
-          .ios-modal-card {
+          .pwa-modal-card {
             width: 100%;
             background-color: var(--bg-card);
             border-top-left-radius: 24px;
             border-top-right-radius: 24px;
             padding: 24px;
             text-align: center;
-            box-shadow: 0 -8px 24px rgba(0,0,0,0.15);
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.25);
             display: flex;
             flex-direction: column;
             gap: 16px;
-            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            border-top: 3px solid var(--color-primary);
           }
 
           @keyframes slideUp {
@@ -167,41 +182,72 @@ export const InstallPwaButton: React.FC = () => {
             to { transform: translateY(0); }
           }
 
-          .ios-modal-header {
+          .pwa-modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
           }
 
-          .ios-modal-title {
-            font-size: 1.15rem;
+          .pwa-modal-title {
+            font-size: 1.2rem;
             color: var(--text-primary);
+            font-weight: 800;
           }
 
-          .ios-close-btn {
+          .pwa-close-btn {
             border: none;
             background: none;
             cursor: pointer;
             color: var(--text-secondary);
+            padding: 4px;
           }
 
-          .ios-steps {
+          /* Custom Tabs in Modal */
+          .modal-tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            gap: 4px;
+          }
+
+          .modal-tab-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+          }
+
+          .modal-tab-btn.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+          }
+
+          .pwa-steps {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 12px;
             text-align: left;
             padding: 10px 0;
+            min-height: 120px;
           }
 
-          .ios-step {
+          .pwa-step {
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 10px;
           }
 
-          .ios-step-num {
-            width: 24px;
-            height: 24px;
+          .pwa-step-num {
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             background-color: var(--color-primary-light);
             color: var(--color-primary);
@@ -209,60 +255,119 @@ export const InstallPwaButton: React.FC = () => {
             align-items: center;
             justify-content: center;
             font-weight: 800;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             flex-shrink: 0;
+            margin-top: 2px;
           }
 
-          .ios-step-text {
+          .pwa-step-text {
             font-size: 0.85rem;
             color: var(--text-secondary);
             line-height: 1.4;
           }
 
-          .ios-icon-visual {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--bg-app);
-            padding: 2px 6px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
-            margin: 0 4px;
-            font-weight: bold;
+          .pwa-highlight {
+            font-weight: 700;
+            color: var(--text-primary);
           }
         `}</style>
       </motion.div>
 
-      {/* iOS Modal */}
+      {/* Manual Installation Guide Modal */}
       <AnimatePresence>
-        {showIosModal && (
-          <div className="ios-modal-overlay" onClick={() => setShowIosModal(false)}>
-            <div className="ios-modal-card" onClick={(e) => e.stopPropagation()}>
-              <div className="ios-modal-header">
-                <h3 className="ios-modal-title">Instalar en tu iPhone</h3>
-                <button className="ios-close-btn" onClick={() => setShowIosModal(false)}>
+        {showModal && (
+          <div className="pwa-modal-overlay" onClick={() => setShowModal(false)}>
+            <div className="pwa-modal-card" onClick={(e) => e.stopPropagation()}>
+              <div className="pwa-modal-header">
+                <h3 className="pwa-modal-title">Cómo Instalar la App</h3>
+                <button className="pwa-close-btn" onClick={() => setShowModal(false)}>
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="ios-steps">
-                <div className="ios-step">
-                  <div className="ios-step-num">1</div>
-                  <div className="ios-step-text">
-                    Toca el botón de <strong>Compartir</strong> en la barra inferior de Safari 
-                    (el icono de un cuadrado con una flecha apuntando hacia arriba <ExternalLink size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />).
-                  </div>
-                </div>
-
-                <div className="ios-step">
-                  <div className="ios-step-num">2</div>
-                  <div className="ios-step-text">
-                    Desplázate hacia abajo y selecciona la opción <strong>Añadir a pantalla de inicio</strong> (Add to Home Screen).
-                  </div>
-                </div>
+              {/* Tabs */}
+              <div className="modal-tabs">
+                <button 
+                  className={`modal-tab-btn ${activeTab === 'pc' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('pc')}
+                >
+                  <Laptop size={14} /> PC (Chrome/Edge)
+                </button>
+                <button 
+                  className={`modal-tab-btn ${activeTab === 'android' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('android')}
+                >
+                  <Smartphone size={14} /> Android
+                </button>
+                <button 
+                  className={`modal-tab-btn ${activeTab === 'ios' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('ios')}
+                >
+                  <Smartphone size={14} /> iPhone (iOS)
+                </button>
               </div>
 
-              <button className="btn btn-primary" onClick={() => setShowIosModal(false)}>
+              {/* Steps by Tab */}
+              <div className="pwa-steps">
+                {activeTab === 'pc' && (
+                  <>
+                    <div className="pwa-step">
+                      <div className="pwa-step-num">1</div>
+                      <div className="pwa-step-text">
+                        En <span className="pwa-highlight">Google Chrome</span> o <span className="pwa-highlight">Microsoft Edge</span>, busca el icono de <strong>Instalación</strong> (computadora con una flecha hacia abajo) en el extremo derecho de la barra de direcciones.
+                      </div>
+                    </div>
+                    <div className="pwa-step">
+                      <div className="pwa-step-num">2</div>
+                      <div className="pwa-step-text">
+                        Haz clic en él y selecciona <span className="pwa-highlight">Instalar</span>. ¡O ve al menú de 3 puntos (arriba a la derecha) ➜ <strong>Guardar y Compartir</strong> ➜ <strong>Instalar página como aplicación</strong>!
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'android' && (
+                  <>
+                    <div className="pwa-step">
+                      <div className="pwa-step-num">1</div>
+                      <div className="pwa-step-text">
+                        Abre la aplicación en Chrome desde tu celular.
+                      </div>
+                    </div>
+                    <div className="pwa-step">
+                      <div className="pwa-step-num">2</div>
+                      <div className="pwa-step-text">
+                        Toca el menú de 3 puntos arriba a la derecha y selecciona la opción <strong>Añadir a la pantalla de inicio</strong> o <strong>Instalar aplicación</strong>.
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === 'ios' && (
+                  <>
+                    <div className="pwa-step">
+                      <div className="pwa-step-num">1</div>
+                      <div className="pwa-step-text">
+                        Abre el enlace en el navegador <span className="pwa-highlight">Safari</span> de tu iPhone.
+                      </div>
+                    </div>
+                    <div className="pwa-step">
+                      <div className="pwa-step-num">2</div>
+                      <div className="pwa-step-text">
+                        Toca el botón <strong>Compartir</strong> (icono de un cuadrado con una flecha hacia arriba <ExternalLink size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />) en la barra inferior.
+                      </div>
+                    </div>
+                    <div className="pwa-step">
+                      <div className="pwa-step-num">3</div>
+                      <div className="pwa-step-text">
+                        Desplázate hacia abajo y selecciona <strong>Añadir a pantalla de inicio</strong>.
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button className="btn btn-primary" onClick={() => setShowModal(false)} style={{ width: '100%', padding: '12px' }}>
                 Entendido
               </button>
             </div>
