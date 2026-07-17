@@ -3,13 +3,12 @@ import { Download, Smartphone, X, ExternalLink, Laptop } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const InstallPwaButton: React.FC = () => {
-  const [hasPrompt, setHasPrompt] = useState(!!(window as any).deferredPrompt);
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'pc' | 'android' | 'ios'>('pc');
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Check if already installed / running in standalone mode
+    // Check if running in standalone mode (already installed)
     const checkStandalone = () => {
       const isStandaloneMode = 
         window.matchMedia('(display-mode: standalone)').matches || 
@@ -18,16 +17,6 @@ export const InstallPwaButton: React.FC = () => {
     };
 
     checkStandalone();
-
-    // Listen to custom installable event
-    const handleInstallable = () => {
-      setHasPrompt(true);
-    };
-
-    window.addEventListener('pwa-installable', handleInstallable);
-    return () => {
-      window.removeEventListener('pwa-installable', handleInstallable);
-    };
   }, []);
 
   const isIos = () => {
@@ -50,17 +39,21 @@ export const InstallPwaButton: React.FC = () => {
   }, []);
 
   const handleInstallClick = async () => {
+    // 1. If iOS, show tutorial immediately
+    if (isIos()) {
+      setShowModal(true);
+      return;
+    }
+
+    // 2. Try triggering native browser installation prompt directly
     const promptEvent = (window as any).deferredPrompt;
-    
-    // If the browser supports the automatic install prompt, trigger it
     if (promptEvent) {
       promptEvent.prompt();
       const { outcome } = await promptEvent.userChoice;
-      console.log(`User response to install prompt: ${outcome}`);
+      console.log(`User response to PWA prompt: ${outcome}`);
       (window as any).deferredPrompt = null;
-      setHasPrompt(false);
     } else {
-      // Otherwise, show the manual installation guide modal
+      // 3. Fallback: If prompt event is not loaded yet (or browser doesn't support automatic prompt), show manual instructions
       setShowModal(true);
     }
   };
@@ -84,7 +77,7 @@ export const InstallPwaButton: React.FC = () => {
           </div>
         </div>
         <button className="btn btn-primary banner-btn" onClick={handleInstallClick}>
-          {hasPrompt ? 'Instalar' : 'Cómo Instalar'} <Download size={16} />
+          {isIos() ? 'Cómo Instalar' : 'Instalar App'} <Download size={16} />
         </button>
 
         <style>{`

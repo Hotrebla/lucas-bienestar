@@ -17,23 +17,21 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
   size = 120,
   animated = true,
 }) => {
-  // Vibrant Comic Book Color Palette (BSE Style)
+  // Color scheme matching the reference: solid green superhero with glowing eyes
   const colors = {
-    outline: '#062011',        // Solid dark outline (almost black)
-    maskBase: '#0d321d',       // Sleek dark emerald mask
-    maskHighlight: '#10b981',  // Emerald highlight
-    muscleBase: '#15803d',     // Mid-tone muscle green
-    muscleHighlight: '#4ade80',// Bright neon muscle highlight
-    muscleShadow: '#0f4425',   // Muscle shade green
-    eyeGlow: '#a3e635',        // Slanted glowing eyes (yellow-green lime)
-    eyeSad: '#38bdf8',         // Blue-sky sad eyes
-    eyeExcited: '#facc15',     // Golden excited eyes
+    outline: '#062c16',       // Thin dark green outline
+    skinBase: '#22c55e',      // Main vibrant green skin
+    skinHighlight: '#4ade80', // Brighter green for muscle highlights
+    skinShadow: '#15803d',    // Deep green for muscle shadows
+    skinDarkest: '#14532d',   // Dark green for core shadows
+    eyeYellow: '#fef08a',     // Glowing yellow-white eyes core
+    eyeGlow: '#eab308',       // Intense golden/yellow outer glow
   };
 
   // Animation variants
   const floatVariants = {
     idle: {
-      y: [0, -5, 0],
+      y: [0, -4, 0],
       transition: {
         duration: 3,
         repeat: Infinity,
@@ -41,8 +39,8 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
       },
     },
     excited: {
-      y: [0, -7, 0],
-      scale: [1, 1.05, 1],
+      y: [0, -6, 0],
+      scale: [1, 1.04, 1],
       transition: {
         duration: 0.5,
         repeat: Infinity,
@@ -50,7 +48,7 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
       },
     },
     sad: {
-      y: [0, 3, 0],
+      y: [0, 2, 0],
       transition: {
         duration: 4,
         repeat: Infinity,
@@ -61,132 +59,77 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
 
   const activeVariant = expression === 'excited' ? 'excited' : expression === 'sad' ? 'sad' : 'idle';
 
-  // Render eyes based on expression
+  // Render eyes (slanted glowing yellow-white shapes)
   const renderEyes = () => {
+    const eyeColor = expression === 'sad' ? '#38bdf8' : expression === 'excited' ? '#fbbf24' : colors.eyeYellow;
+    const filter = expression === 'excited' ? 'url(#eye-glow-strong)' : 'url(#eye-glow-normal)';
+    
     switch (expression) {
       case 'happy':
         return (
           <>
             {/* Happy curved glowing eyes */}
-            <path
-              d="M 32 46 C 36 38, 42 38, 45 44 C 41 43, 36 44, 32 46 Z"
-              fill={colors.eyeGlow}
-              filter="url(#neon-glow)"
-            />
-            <path
-              d="M 68 46 C 64 38, 58 38, 55 44 C 59 43, 64 44, 68 46 Z"
-              fill={colors.eyeGlow}
-              filter="url(#neon-glow)"
-            />
+            <path d="M 36 38 C 39 33, 44 33, 46 37 C 43 36, 39 37, 36 38 Z" fill={eyeColor} filter={filter} />
+            <path d="M 64 38 C 61 33, 56 33, 54 37 C 57 36, 61 37, 64 38 Z" fill={eyeColor} filter={filter} />
           </>
         );
       case 'sad':
         return (
           <>
-            {/* Drooping sad glowing eyes (blue-green tone) */}
-            <path
-              d="M 32 48 Q 39 45, 43 51 Q 38 48, 32 48"
-              fill={colors.eyeSad}
-              filter="url(#neon-glow)"
-            />
-            <path
-              d="M 68 48 Q 61 45, 57 51 Q 62 48, 68 48"
-              fill={colors.eyeSad}
-              filter="url(#neon-glow)"
-            />
+            {/* Sad downward slanted eyes */}
+            <path d="M 36 38 C 40 37, 44 41, 45 42 Q 40 39, 36 38" fill={eyeColor} filter={filter} />
+            <path d="M 64 38 C 60 37, 56 41, 55 42 Q 60 39, 64 38" fill={eyeColor} filter={filter} />
           </>
         );
       case 'thinking':
         return (
           <>
-            {/* Thinking expression - left eye normal, right eye squinting */}
-            <path
-              d="M 31 44 Q 38 36, 43 43 C 38 42, 34 43, 31 44"
-              fill={colors.eyeGlow}
-              filter="url(#neon-glow)"
-            />
-            <path
-              d="M 69 46 Q 63 44, 57 46 Q 63 46, 69 46"
-              fill={colors.eyeGlow}
-              filter="url(#neon-glow)"
-              opacity="0.8"
-            />
+            {/* One eye normal, one eye squinting */}
+            <path d="M 35 37 C 39 32, 44 36, 45 37 Q 39 36, 35 37" fill={eyeColor} filter={filter} />
+            <path d="M 65 38 L 55 38" stroke={eyeColor} strokeWidth="3" strokeLinecap="round" filter={filter} />
           </>
         );
       case 'excited':
-        return (
-          <>
-            {/* Bright golden slanted eyes */}
-            <path
-              d="M 30 43 Q 38 31, 45 41 Q 38 42, 30 43 Z"
-              fill={colors.eyeExcited}
-              filter="url(#neon-glow-strong)"
-            />
-            <path
-              d="M 70 43 Q 62 31, 55 41 Q 62 42, 70 43 Z"
-              fill={colors.eyeExcited}
-              filter="url(#neon-glow-strong)"
-            />
-          </>
-        );
       case 'default':
       default:
         return (
           <>
-            {/* Slanted glowing eyes */}
-            <path
-              d="M 31 44 Q 38 33, 44 42 Q 38 42, 31 44 Z"
-              fill={colors.eyeGlow}
-              filter="url(#neon-glow)"
-            />
-            <path
-              d="M 69 44 Q 62 33, 56 42 Q 63 42, 69 44 Z"
-              fill={colors.eyeGlow}
-              filter="url(#neon-glow)"
-            />
+            {/* Standard slanted glowing eyes from reference */}
+            <path d="M 35 37 Q 41 29, 46 36 Q 40 36, 35 37 Z" fill={eyeColor} filter={filter} />
+            <path d="M 65 37 Q 59 29, 54 36 Q 60 36, 65 37 Z" fill={eyeColor} filter={filter} />
           </>
         );
     }
   };
 
-  // Render accessories based on role
   const renderAccessories = () => {
     switch (role) {
       case 'chef':
         return (
-          // Chef Hat sitting on cowl
           <g>
-            <path
-              d="M 35 16 L 65 16 L 67 9 L 33 9 Z"
-              fill="#ffffff"
-              stroke={colors.outline}
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M 30 9 Q 18 -5, 36 -3 Q 40 -12, 50 -10 Q 60 -12, 64 -3 Q 82 -5, 70 9 Z"
-              fill="#ffffff"
-              stroke={colors.outline}
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-            />
-            <path d="M 34 12.5 L 66 12.5" stroke="#ef4444" strokeWidth="2.5" />
+            {/* Chef Hat resting on head */}
+            <path d="M 37 13 L 63 13 L 65 7 L 35 7 Z" fill="#ffffff" stroke={colors.outline} strokeWidth="2.5" />
+            <path d="M 32 7 Q 20 -6, 36 -4 Q 40 -13, 50 -11 Q 60 -13, 64 -4 Q 80 -6, 68 7 Z" fill="#ffffff" stroke={colors.outline} strokeWidth="2.5" />
+            <path d="M 35 10 L 65 10" stroke="#ef4444" strokeWidth="2" />
           </g>
         );
       case 'coach':
         return (
-          // Whistle around muscular neck
           <g>
-            <path d="M 37 72 C 37 81, 63 81, 63 72" fill="none" stroke="#ef4444" strokeWidth="2.5" />
-            <path d="M 46 79 L 54 79 L 53 88 L 47 88 Z" fill="#cbd5e1" stroke={colors.outline} strokeWidth="2.5" />
+            {/* Black tank top straps and whistle */}
+            <path d="M 23 68 L 29 88" stroke={colors.outline} strokeWidth="6" strokeLinecap="round" />
+            <path d="M 77 68 L 71 88" stroke={colors.outline} strokeWidth="6" strokeLinecap="round" />
+            {/* Whistle */}
+            <path d="M 38 68 C 38 78, 62 78, 62 68" fill="none" stroke="#ef4444" strokeWidth="2.5" />
+            <path d="M 46 76 L 54 76 L 53 85 L 47 85 Z" fill="#cbd5e1" stroke={colors.outline} strokeWidth="2" />
           </g>
         );
       case 'zen':
         return (
-          // Concentric meditation circles in background
           <g>
-            <circle cx="50" cy="46" r="39" fill="none" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.6" />
-            <circle cx="50" cy="46" r="44" fill="none" stroke="#a3e635" strokeWidth="1" strokeDasharray="3 3" opacity="0.4" />
+            {/* Zen aura rings in background */}
+            <circle cx="50" cy="40" r="36" fill="none" stroke="#4ade80" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.6" />
+            <circle cx="50" cy="40" r="42" fill="none" stroke="#22c55e" strokeWidth="1" strokeDasharray="3 3" opacity="0.4" />
           </g>
         );
       case 'motivator':
@@ -194,21 +137,9 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
         if (expression === 'excited') {
           return (
             <g>
-              {/* Green Super Saiyan glowing flames in background */}
-              <path
-                d="M 15 45 L 8 15 L 24 25 L 38 3 L 48 20 L 58 3 L 72 25 L 88 15 L 82 45 Z"
-                fill="none"
-                stroke={colors.muscleHighlight}
-                strokeWidth="2"
-                opacity="0.7"
-              />
-              <path
-                d="M 23 40 L 20 20 L 32 28 L 48 8 L 62 28 L 76 20 L 73 40 Z"
-                fill="none"
-                stroke={colors.eyeGlow}
-                strokeWidth="1.5"
-                opacity="0.9"
-              />
+              {/* Green Super Saiyan energy flames */}
+              <path d="M 12 40 L 4 10 L 22 20 L 36 -2 L 48 16 L 58 -2 L 72 20 L 88 10 L 82 40 Z" fill="none" stroke={colors.skinHighlight} strokeWidth="2" opacity="0.6" />
+              <path d="M 22 35 L 18 15 L 30 22 L 48 4 L 62 22 L 74 15 L 70 35 Z" fill="none" stroke={colors.eyeGlow} strokeWidth="1.5" opacity="0.8" />
             </g>
           );
         }
@@ -234,18 +165,18 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
         animate={animated ? activeVariant : undefined}
       >
         <defs>
-          {/* Intense Neon Glow filters */}
-          <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="1.5" result="blur" />
+          {/* Neon Glow Filters */}
+          <filter id="eye-glow-normal" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
 
-          <filter id="neon-glow-strong" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3" result="blur1" />
-            <feGaussianBlur stdDeviation="1" result="blur2" />
+          <filter id="eye-glow-strong" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="4" result="blur1" />
+            <feGaussianBlur stdDeviation="1.5" result="blur2" />
             <feMerge>
               <feMergeNode in="blur1" />
               <feMergeNode in="blur2" />
@@ -253,108 +184,88 @@ export const LucasAvatar: React.FC<LucasAvatarProps> = ({
             </feMerge>
           </filter>
 
-          {/* Core muscular color shading gradients */}
-          <linearGradient id="muscle-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={colors.muscleHighlight} />
-            <stop offset="40%" stopColor={colors.muscleBase} />
-            <stop offset="100%" stopColor={colors.muscleShadow} />
+          {/* Gradients matching the reference: solid green with highlights */}
+          <linearGradient id="body-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={colors.skinHighlight} />
+            <stop offset="50%" stopColor={colors.skinBase} />
+            <stop offset="100%" stopColor={colors.skinShadow} />
           </linearGradient>
 
-          <linearGradient id="mask-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={colors.maskHighlight} />
-            <stop offset="25%" stopColor={colors.maskBase} />
-            <stop offset="100%" stopColor="#02140b" />
+          <linearGradient id="head-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={colors.skinHighlight} />
+            <stop offset="60%" stopColor={colors.skinBase} />
+            <stop offset="100%" stopColor={colors.skinShadow} />
           </linearGradient>
         </defs>
 
-        {/* Outer Shadow */}
-        <ellipse cx="50" cy="94" rx="28" ry="4" fill="#02140b" opacity="0.35" />
+        {/* Shadow */}
+        <ellipse cx="50" cy="95" rx="26" ry="3.5" fill="#000000" opacity="0.3" />
 
-        {/* Background accessories (flames, zen aura) */}
+        {/* Role Background Elements */}
         {renderAccessories()}
 
-        {/* 1. Shoulders & Torso (V-Shape Body) */}
-        {/* Draw main muscular neck, shoulders, and chest outline */}
+        {/* 1. THICK NECK AND TRAPEZIUS (Reference anatomy: very wide neck and traps) */}
         <path
-          d="M 12 88 C 12 74, 18 64, 30 63 C 35 59, 39 55, 41 53 L 59 53 C 61 55, 65 59, 70 63 C 82 64, 88 74, 88 88 Z"
-          fill="url(#muscle-grad)"
+          d="M 32 45 L 32 65 Q 50 68, 68 65 L 68 45 Z"
+          fill="url(#body-grad)"
           stroke={colors.outline}
-          strokeWidth="3"
+          strokeWidth="2.5"
+        />
+        {/* Traps lines */}
+        <path d="M 28 60 L 38 43" stroke={colors.outline} strokeWidth="2.5" fill="none" />
+        <path d="M 72 60 L 62 43" stroke={colors.outline} strokeWidth="2.5" fill="none" />
+
+        {/* 2. BROAD SHOULDERS (Massive rounded deltoids) */}
+        <path
+          d="M 10 90 C 10 72, 20 62, 32 60 C 42 58, 58 58, 68 60 C 80 62, 90 72, 90 90 Z"
+          fill="url(#body-grad)"
+          stroke={colors.outline}
+          strokeWidth="2.8"
           strokeLinejoin="round"
         />
 
-        {/* Deltoids / Shoulder lines */}
+        {/* Deltoid muscle curves */}
+        <path d="M 12 80 C 18 70, 28 66, 32 60" stroke={colors.outline} strokeWidth="2.5" fill="none" />
+        <path d="M 88 80 C 82 70, 72 66, 68 60" stroke={colors.outline} strokeWidth="2.5" fill="none" />
+
+        {/* 3. CHEST & PECTORALS (Reference anatomy: thick chest plates separated by central line) */}
+        <path d="M 50 58 L 50 80" stroke={colors.outline} strokeWidth="2.5" />
+        {/* Left pectoral shape */}
+        <path d="M 32 60 Q 38 78, 50 78" fill="none" stroke={colors.outline} strokeWidth="2.8" />
+        {/* Right pectoral shape */}
+        <path d="M 68 60 Q 62 78, 50 78" fill="none" stroke={colors.outline} strokeWidth="2.8" />
+
+        {/* Chest highlights */}
+        <path d="M 35 63 Q 40 70, 48 70" stroke={colors.skinHighlight} strokeWidth="2" fill="none" opacity="0.6" />
+        <path d="M 65 63 Q 60 70, 52 70" stroke={colors.skinHighlight} strokeWidth="2" fill="none" opacity="0.6" />
+
+        {/* 4. SIX-PACK ABS (Reference anatomy: stacked abs below pecs) */}
+        <path d="M 41 82 Q 50 81, 59 82" stroke={colors.outline} strokeWidth="2" fill="none" />
+        <path d="M 39 88 Q 50 87, 61 88" stroke={colors.outline} strokeWidth="2" fill="none" />
+        <path d="M 38 94 Q 50 93, 62 94" stroke={colors.outline} strokeWidth="2" fill="none" />
+
+        {/* 5. SMOOTH GREEN HEAD (Reference: egg-like smooth head, solid green, no ears, no mask lines) */}
         <path
-          d="M 13 88 C 14 77, 22 72, 30 63"
+          d="M 32 30 C 32 15, 38 12, 50 12 C 62 12, 68 15, 68 30 C 68 45, 60 48, 50 48 C 40 48, 32 45, 32 30 Z"
+          fill="url(#head-grad)"
+          stroke={colors.outline}
+          strokeWidth="2.8"
+        />
+
+        {/* Head lighting shine */}
+        <path
+          d="M 36 26 C 36 18, 40 16, 50 16 C 60 16, 64 18, 64 26"
           fill="none"
-          stroke={colors.outline}
-          strokeWidth="3"
-        />
-        <path
-          d="M 87 88 C 86 77, 78 72, 70 63"
-          fill="none"
-          stroke={colors.outline}
-          strokeWidth="3"
+          stroke={colors.skinHighlight}
+          strokeWidth="2"
+          opacity="0.5"
         />
 
-        {/* Pectoral division & definitions */}
-        <path
-          d="M 50 62 L 50 82"
-          stroke={colors.outline}
-          strokeWidth="3"
-        />
+        {/* Neck Shadow under chin */}
+        <path d="M 35 44 Q 50 49, 65 44" fill="none" stroke={colors.outline} strokeWidth="2.5" opacity="0.4" />
 
-        {/* Left Pectoral curve */}
-        <path
-          d="M 30 63 Q 36 78, 50 78"
-          fill="none"
-          stroke={colors.outline}
-          strokeWidth="3"
-        />
-        {/* Right Pectoral curve */}
-        <path
-          d="M 70 63 Q 64 78, 50 78"
-          fill="none"
-          stroke={colors.outline}
-          strokeWidth="3"
-        />
-
-        {/* Pectoral highlights (creates depth) */}
-        <path d="M 33 66 Q 38 72, 47 72" stroke={colors.muscleHighlight} strokeWidth="2.5" fill="none" opacity="0.6" />
-        <path d="M 67 66 Q 62 72, 53 72" stroke={colors.muscleHighlight} strokeWidth="2.5" fill="none" opacity="0.6" />
-
-        {/* Six-pack Abs mapping */}
-        <path d="M 40 82 Q 50 80, 60 82" stroke={colors.outline} strokeWidth="2.5" fill="none" />
-        <path d="M 38 87 Q 50 85, 62 87" stroke={colors.outline} strokeWidth="2.5" fill="none" />
-        <path d="M 37 92 Q 50 90, 63 92" stroke={colors.outline} strokeWidth="2.5" fill="none" />
-
-        {/* 2. Sleek Mask Head (Aggressive Superhero shape) */}
-        {/* Tapered head shape: wide brow, defined jaw */}
-        <path
-          d="M 27 42 C 27 22, 33 14, 50 14 C 67 14, 73 22, 73 42 C 73 57, 63 63, 50 63 C 37 63, 27 57, 27 42 Z"
-          fill="url(#mask-grad)"
-          stroke={colors.outline}
-          strokeWidth="3.2"
-        />
-
-        {/* Mask brow/head highlights (V-shape shine on forehead) */}
-        <path
-          d="M 31 38 C 31 24, 38 18, 50 18 C 62 18, 69 24, 69 38"
-          fill="none"
-          stroke={colors.maskHighlight}
-          strokeWidth="2.5"
-          opacity="0.6"
-        />
-
-        {/* Cheekbone/Jaw outlines for premium feel */}
-        <path d="M 31 48 Q 50 59, 69 48" fill="none" stroke={colors.outline} strokeWidth="2.2" opacity="0.8" />
-        <path d="M 35 56 Q 50 63, 65 56" fill="none" stroke={colors.outline} strokeWidth="2.5" />
-
-        {/* Glowing Eyes */}
+        {/* 6. GLOWING EYES (Bright yellow/gold slanted eyes) */}
         {renderEyes()}
-
-        {/* Forehead reflection */}
-        <path d="M 46 22 L 54 22" stroke="#ffffff" strokeWidth="1.5" opacity="0.3" strokeLinecap="round" />
       </motion.svg>
     </div>
   );
