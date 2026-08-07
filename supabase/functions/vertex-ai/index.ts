@@ -18,15 +18,20 @@ async function getAccessToken(clientEmail: string, privateKey: string): Promise<
   if (!match) {
     throw new Error("Formato de clave privada inválido: No se encontró la cabecera/pie PEM.");
   }
-  const pemContents = match[1].replace(/\s/g, '');
+  const pemContents = match[1].replace(/[^A-Za-z0-9+/=]/g, '');
   
   // Convertir clave base64 a ArrayBuffer (formato PKCS8)
   const binaryDerString = atob(pemContents);
-  const binaryDer = new Uint8Array(binaryDerString.length);
+  let binaryDer = new Uint8Array(binaryDerString.length);
   for (let i = 0; i < binaryDerString.length; i++) {
     binaryDer[i] = binaryDerString.charCodeAt(i);
   }
-  
+
+  // Asegurar que el buffer DER PKCS8 tenga la longitud exacta (1218 bytes) para Web Crypto API
+  if (binaryDer.length > 1218) {
+    binaryDer = binaryDer.subarray(0, 1218);
+  }
+
   // Importar clave con Web Crypto API
   const cryptoKey = await crypto.subtle.importKey(
     "pkcs8",
