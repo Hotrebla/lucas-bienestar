@@ -61,6 +61,185 @@ interface GameContextType {
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
+// Helper to generate rich educational fallback lessons when offline or fallback is triggered
+const generateSmartLocalLesson = (lessonShell: Lesson): { slides: Slide[]; quiz: Question[] } => {
+  const titleLower = lessonShell.title.toLowerCase();
+  const category = lessonShell.category;
+
+  // Topic specific overrides
+  if (titleLower.includes('fuerza') || titleLower.includes('cardio')) {
+    return {
+      slides: [
+        {
+          title: "Fuerza vs Cardio: El Equipo Perfecto 🏋️‍♂️🏃‍♂️",
+          content: "El entrenamiento de fuerza desarrolla masa muscular y eleva tu metabolismo basal en reposo, mientras que el cardio fortalece tu corazón y tu resistencia pulmonar. ¡Ambos son indispensables y se complementan!",
+          illustrationRole: 'coach',
+          illustrationExpression: 'excited'
+        },
+        {
+          title: "La Clave de Combinarlos 💡",
+          content: "Combinar ejercicios de fuerza con sesiones de cardio evita la pérdida muscular, mejora la sensibilidad a la insulina y optimiza tu salud cardiovascular integral.",
+          illustrationRole: 'coach',
+          illustrationExpression: 'happy'
+        }
+      ],
+      quiz: [
+        {
+          id: `q_${lessonShell.id}_1`,
+          question: "¿Cuál es el beneficio clave del entrenamiento de fuerza frente al cardio?",
+          options: [
+            "Desarrollar masa muscular y elevar el metabolismo en reposo",
+            "Servir únicamente para sudar durante la sesión",
+            "No produce ningún cambio metabólico"
+          ],
+          correctAnswer: 0,
+          explanation: "¡Exacto! Desarrollar músculo aumenta tu consumo calórico diario incluso cuando estás en reposo."
+        },
+        {
+          id: `q_${lessonShell.id}_2`,
+          question: "¿Por qué es ideal integrar fuerza y cardio en tu rutina?",
+          options: [
+            "Porque optimizan tanto la masa muscular como la salud del corazón",
+            "Porque debes entrenar obligatoriamente 4 horas al día",
+            "Solo el cardio es importante para estar saludable"
+          ],
+          correctAnswer: 0,
+          explanation: "¡Así se hace! La sinergia entre fuerza y cardio crea una condición física completa y sostenible."
+        }
+      ]
+    };
+  }
+
+  // Category based smart templates for any topic
+  if (category === 'nutrition') {
+    return {
+      slides: [
+        {
+          title: `Nutrición Inteligente: ${lessonShell.title} 🥗`,
+          content: `Comprender los conceptos de ${lessonShell.title} te permite elegir alimentos con alta densidad nutricional para mantener tu energía constante y alimentar tus células.`,
+          illustrationRole: 'chef',
+          illustrationExpression: 'happy'
+        },
+        {
+          title: "Principio Científico de Nutrición 🔬",
+          content: `La clave de una buena alimentación no es restringir comida ni pasar hambre, sino balancear los macronutrientes esenciales y priorizar ingredientes naturales.`,
+          illustrationRole: 'chef',
+          illustrationExpression: 'default'
+        }
+      ],
+      quiz: [
+        {
+          id: `q_${lessonShell.id}_1`,
+          question: `¿Cuál es el beneficio principal de estudiar ${lessonShell.title}?`,
+          options: [
+            "Tomar decisiones informadas para seleccionar alimentos nutritivos",
+            "Contar calorías obsesivamente sin importar la calidad del alimento",
+            "Eliminar por completo todos los alimentos que me gustan"
+          ],
+          correctAnswer: 0,
+          explanation: `¡Correcto! Entender ${lessonShell.title} nos ayuda a nutrir nuestro cuerpo con alimentos reales de alta calidad.`
+        },
+        {
+          id: `q_${lessonShell.id}_2`,
+          question: "¿Cuál es el pilar de una nutrición saludable según Lucas Chef?",
+          options: [
+            "Priorizar alimentos naturales y balancear los macronutrientes",
+            "Hacer dietas extremas y pasar hambre todo el día",
+            "Depender solo de suplementos sintéticos"
+          ],
+          correctAnswer: 0,
+          explanation: "¡Exacto! El equilibrio de alimentos reales es la estrategia más efectiva y duradera."
+        }
+      ]
+    };
+  }
+
+  if (category === 'training') {
+    return {
+      slides: [
+        {
+          title: `Principios de Entrenamiento: ${lessonShell.title} 🏋️‍♂️`,
+          content: `Al trabajar en ${lessonShell.title}, estimulas tus fibras musculares y adaptas tu sistema nervioso para ganar fuerza, agilidad y resistencia física.`,
+          illustrationRole: 'coach',
+          illustrationExpression: 'excited'
+        },
+        {
+          title: "Sobrecarga Progresiva y Descanso 📊",
+          content: `El tejido muscular se reconstruye durante la recuperación. Asegura buena técnica, sobrecarga progresiva y un descanso reparador.`,
+          illustrationRole: 'coach',
+          illustrationExpression: 'default'
+        }
+      ],
+      quiz: [
+        {
+          id: `q_${lessonShell.id}_1`,
+          question: `¿Cuál es el propósito de practicar ${lessonShell.title}?`,
+          options: [
+            "Mejorar el rendimiento físico y estimular la adaptación muscular",
+            "Entrenar sin importar el dolor ni la técnica de ejecución",
+            "Solo sirve para cansarse sin obtener resultados"
+          ],
+          correctAnswer: 0,
+          explanation: `¡Muy bien! Aplicar correctamente ${lessonShell.title} estimula el progreso muscular de forma segura.`
+        },
+        {
+          id: `q_${lessonShell.id}_2`,
+          question: "¿En qué momento ocurre principalmente la recuperación muscular?",
+          options: [
+            "Durante el descanso adecuado y la nutrición post-entreno",
+            "Únicamente durante los minutos en los que levantamos peso",
+            "El músculo no necesita tiempo de descanso"
+          ],
+          correctAnswer: 0,
+          explanation: "¡Eso es! El descanso y los nutrientes son los verdaderos constructores del tejido muscular."
+        }
+      ]
+    };
+  }
+
+  // Habits category
+  return {
+    slides: [
+      {
+        title: `Hábitos Saludables: ${lessonShell.title} 🧘‍♂️`,
+        content: `Crear constancia con ${lessonShell.title} reduce tu fatiga mental. Los pequeños hábitos diarios acumulados generan resultados extraordinarios a largo plazo.`,
+        illustrationRole: 'zen',
+        illustrationExpression: 'happy'
+      },
+      {
+        title: "La Regla del 1% Diario 💡",
+        content: `No busques cambiar toda tu vida en un día. Enfócate en mejorar un 1% cada día y simplificar tu entorno para facilitar tus decisiones positivas.`,
+        illustrationRole: 'zen',
+        illustrationExpression: 'default'
+      }
+    ],
+    quiz: [
+      {
+        id: `q_${lessonShell.id}_1`,
+        question: `¿Por qué es importante cultivar hábitos alrededor de ${lessonShell.title}?`,
+        options: [
+          "Porque la constancia diaria genera grandes transformaciones sin agotarte",
+          "Porque requiere un esfuerzo monumental imposible de mantener",
+          "Los hábitos no influyen en el estilo de vida"
+        ],
+        correctAnswer: 0,
+        explanation: `¡Así se hace! La consistencia en pequeñas acciones con ${lessonShell.title} transforma tu calidad de vida.`
+      },
+      {
+        id: `q_${lessonShell.id}_2`,
+        question: "¿Cuál es el consejo principal de Lucas Zen para formar nuevos hábitos?",
+        options: [
+          "Avanzar con la regla del 1% diario y mantener la constancia",
+          "Exigirte resultados inmediatos desde el primer día",
+          "Rendirte si un día no cumples con la meta"
+        ],
+        correctAnswer: 0,
+        explanation: "¡Exacto! El progreso continuo del 1% diario vence a la motivación temporal."
+      }
+    ]
+  };
+};
+
 // Helper to programmatically generate 150 offline/demo lesson shells
 const generateOfflineShells = (): Lesson[] => {
   const categories: Category[] = ['nutrition', 'training', 'habits'];
@@ -412,55 +591,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (funcErr) {
         console.warn("Fallo la Edge Function de Supabase. Iniciando fallback local:", funcErr);
         
-        // Dynamic Local Generator Fallback
-        const roleName = (category === "training" ? "coach" : category === "habits" ? "zen" : "chef") as 'chef' | 'coach' | 'zen' | 'motivator';
-        const roleTitle = category === "training" ? "Lucas Coach 🏋️‍♂️" : category === "habits" ? "Lucas Zen 🧘‍♂️" : "Lucas Chef 👨‍🍳";
-        
-        const localMock = {
-          slides: [
-            {
-              title: `¡Bienvenido al Nivel: ${lessonShell.title}!`,
-              content: `Hoy aprenderemos sobre ${lessonShell.title}. Esta lección está configurada en la dificultad: ${difficulty}. ¡Pon mucha atención!`,
-              illustrationRole: roleName,
-              illustrationExpression: "happy" as const
-            },
-            {
-              title: "Consejo de Lucas 💡",
-              content: `Para aplicar este concepto en tu día a día, haz cambios paso a paso. Recuerda que no necesitas perfección, solo constancia.`,
-              illustrationRole: roleName,
-              illustrationExpression: "default" as const
-            }
-          ],
-          quiz: [
-            {
-              id: `q_${lessonId}_1`,
-              question: `¿Cuál es el beneficio principal de estudiar ${lessonShell.title}?`,
-              options: [
-                "Tomar decisiones informadas y consistentes sobre mi bienestar.",
-                "Ninguno, solo sirve para pasar el rato en el juego.",
-                "Solo es para acumular puntos XP."
-              ],
-              correctAnswer: 0,
-              explanation: "¡Excelente! Aprender la teoría nos ayuda a tomar mejores decisiones en nuestro día a día."
-            },
-            {
-              id: `q_${lessonId}_2`,
-              question: `¿Qué consejo nos da ${roleTitle} en esta lección?`,
-              options: [
-                "Buscar la perfección total en la alimentación y entrenamiento.",
-                "Enfocarnos en hacer cambios constantes y paso a paso.",
-                "Saltarnos el calentamiento antes del ejercicio."
-              ],
-              correctAnswer: 1,
-              explanation: "¡Exacto! La constancia supera a la perfección en cualquier proceso de bienestar."
-            }
-          ]
-        };
+        // Dynamic Local Generator Fallback with rich educational content
+        const smartLesson = generateSmartLocalLesson(lessonShell);
 
         const fullLesson: Lesson = {
           ...lessonShell,
-          slides: localMock.slides,
-          quiz: localMock.quiz,
+          slides: smartLesson.slides,
+          quiz: smartLesson.quiz,
         };
 
         // Cache in memory and set active
