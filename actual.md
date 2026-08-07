@@ -34,10 +34,11 @@ LUCAS es una aplicación PWA (Progressive Web App) estilo **Duolingo** diseñada
     *   Hicimos que el botón **"Instalar App"** abra directamente el diálogo nativo de descarga en PC y Android. Si se navega desde un iPhone (iOS), abrirá una guía interactiva adaptada.
 *   **Conexión y Despliegue de la Edge Function en Producción**:
     *   Desplegamos con éxito la función `vertex-ai` en el proyecto de Supabase en producción.
-    *   Configuramos de forma encriptada las credenciales de Google Cloud (`GCP_PROJECT_ID`, `GCP_CLIENT_EMAIL`, `GCP_PRIVATE_KEY`).
-    *   Diagnosticamos y resolvimos la cuota regional de Vertex AI apuntando a la región activa del cliente (**`asia-northeast1`**).
-    *   Implementamos el formateador y extractor de JSON `extractValidJson` para neutralizar de forma robusta cualquier carácter extra devuelto por la IA.
-    *   Sincronizamos la base de datos de producción con el script de 150 niveles (`seed_curriculum.sql`) y la caché de lecciones, eliminando todos los errores 406 de consola tras limpiar el caché del navegador.
+    *   Migramos y sincronizamos las credenciales al nuevo proyecto de Google Cloud (`project-3b329dc7-de06-42c5-9f3`) con la cuenta de servicio `saas-vertex-master@...`.
+    *   Configuramos encriptados los 5 secretos en Supabase (`GCP_PROJECT_ID`, `GCP_CLIENT_EMAIL`, `GCP_PRIVATE_KEY`, `GCP_REGION`, `GCP_MODEL_NAME`) apuntando a la región activa **`asia-northeast1`** y modelo **`gemini-3.5-flash`**.
+    *   Implementamos el formateador y extractor de JSON `extractValidJson` y el recortador DER de 1218 bytes para firmas PKCS8 en Deno Web Crypto API.
+    *   Rediseñamos el **generador local inteligente** en `GameContext.tsx`: ante cualquier pérdida de red o servidor en pausa, la app genera automáticamente diapositivas con teoría rica y científica para el tema específico (Nutrición, Entrenamiento, Hábitos, Fuerza vs Cardio, etc.) antes de pasar al quiz.
+    *   Verificación en vivo: Respuesta remota `Status 200 OK` comprobada generando lecciones completas en español.
 
 ---
 
